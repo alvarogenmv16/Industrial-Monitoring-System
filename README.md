@@ -7,19 +7,21 @@ A modern monitoring system for industrial motors that collects sensor data, stor
 
 This project is part of an industrial monitoring initiative focused on combining data acquisition, real-time analytics, and scalable architecture with Python best practices and clean project structure.
 
+The data is coming from this dataset: https://www.kaggle.com/datasets/ziya07/smart-manufacturing-iot-cloud-monitoring-dataset/data
+
 ---
 
 ## 📊 About the Project
 This system aims to provide a complete solution for monitoring industrial motors:
 
-- Collect sensor data such as temperature, voltage, current, and vibration
+- Collect sensor data such as temperature, pressure, vibration...
 - Store historical and real-time data in a SQLite database
 - Implement anomaly detection to identify unusual behavior
 - Trigger alerts when thresholds or anomalies are detected
 - Expose dashboards and RESTful endpoints using FastAPI
 - Enable analysis and reporting with pandas and SQL
 
-The system is designed to be modular, maintainable, and easily extendable for additional sensors or analytic features.
+The dashboard aims to provide visual representation for the different devices, and better comprehension of the data we are receiving
 
 ---
 

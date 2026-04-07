@@ -1,5 +1,20 @@
 from sqlite3 import Connection
 
+def get_motor_ids(db: Connection):
+    """
+    Retrieves all motor ids from the database.
+    
+    Since the database randomly chooses 10 motors each time it is loaded
+    
+    Args:
+        db (Connection): An active SQLite database connection
+    """
+    cursor = db.cursor()
+    query = "SELECT DISTINCT machine_id FROM motor_data ORDER BY machine_id"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    return [row["machine_id"] for row in rows]  # Return a list of machine_ids
+
 def get_motor_data(db: Connection, machine_id: int):
     """
     Retrieves all motor data records from the database.

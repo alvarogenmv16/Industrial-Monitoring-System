@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlite3 import Connection
 from api.connector import get_db
 from services import motor_service
+from responses import motor_responses
 from api.schemas import MotorTelemetry
 from typing import List
 
@@ -9,27 +10,18 @@ router = APIRouter(prefix="/motors", tags=["Motors"])
 
 @router.get("/", 
     response_model=List[int],
-    responses = {
-        200: {
-            "description": "List of motor IDs in the database",
-            "content": {
-                "application/json": {
-                    "example": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                }
-            },
-        },
+    responses = motor_responses.motor_ids_response,
+    summary = "Get all motor IDs",
+    description = """
+        Retrieve all motor IDs currently stored in the system.
 
-        404: {
-            "description": "No motor IDs found",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Failed to retrieve motor IDs from database"
-                    }
-                }
-            },
-        },
-    }
+        ### Notes
+        - Returns an empty list if no motors are available.
+        - Does not include telemetry data.
+
+        ### Example usage
+        Frontend loads this endpoint to allow users to select a motor.
+    """,
 )
 async def get_motor_ids(db:Connection = Depends(get_db)):
     data = motor_service.get_motor_ids(db)
@@ -42,36 +34,26 @@ async def get_motor_ids(db:Connection = Depends(get_db)):
     return data
 
 @router.get("/{motor_id}/telemetry/latest", response_model=MotorTelemetry,
-    responses = {
-        200: {
-            "description": "Retrieve motor stats",
-            "content": {
-                "application/json": {
-                    "example":
-                    {
-                        "timestamp": "2025-01-1T01:11:11",
-                        "machine_id": 1,
-                        "temperature": 40,
-                        "vibration": 40,
-                        "pressure": 4,
-                        "energy_consumption": 1,
-                        "machine_status": 1,
-                        "anomaly_flag": 0
-                    }
-                }
-            },
-        },
-        404: {
-            "description": "No motor data found for the specified ID",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "No data found for motor with ID: 1"
-                    }
-                }
-            },
-        },
-    },
+    responses = motor_responses.motor_telemetry_response,
+    summary = "Get latest telemetry data",
+    description = """
+        Retrieve the most recent telemetry data for a specific motor.
+
+        ### Includes
+        - Temperature
+        - Vibration
+        - Pressure
+        - Energy consumption
+        - Machine status
+        - Anomaly flag
+
+        ### Behavior
+        - Returns the most recent record available.
+        - Returns **404** if the motor does not exist or has no data.
+
+        ### Example
+        Used to update live metrics in a monitoring UI.
+    """,    
 )
 async def get_motor_status(motor_id: int, db: Connection = Depends(get_db)):
     data = motor_service.get_motor_data(db, motor_id)

@@ -4,7 +4,7 @@ from api.connector import get_db
 from services import motor_service
 from responses import motor_responses
 from api.schemas import MotorTelemetry
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/motors", tags=["Motors"])
 
@@ -65,3 +65,32 @@ async def get_motor_status(motor_id: int, db: Connection = Depends(get_db)):
         )
 
     return dict(data)   # Convert sqlite3.Row to a regular dictionary for Pydantic model parsing
+
+@router.get("/{motor_id}/telemetry/history", response_model=List[MotorTelemetry],
+    responses = motor_responses.motor_telemetry_response,
+    summary = "Get the historical data for a given motor ID",
+    description = """
+    Retrieve the historical telemetry data for a specific motor.
+    
+    ### Query parameters
+    - start_time: beginning of range
+    - end_time: end of range
+
+    ### Behavior
+    - Returns the historical records from oldest to newest
+    - Returns **404** if the motor does not exist or has no data.
+
+    ### Example
+    Used to update live metrics in a monitoring UI.
+    """,
+)
+async def get_motor_history(motor_id: int, start_time: Optional[str] = None, end_time: Optional[str] = None,db: Connection = Depends(get_db),):
+    data = motor_service.get_motor_history(db = db, machine_id = motor_id, start_time = start_time, end_time = end_time)
+
+    if not data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No historical data found for motor with ID: {motor_id}"
+        )
+
+    return data

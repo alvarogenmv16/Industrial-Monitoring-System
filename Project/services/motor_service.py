@@ -1,7 +1,9 @@
 from sqlite3 import Connection
 from typing import List, Optional
 
-def get_motor_ids(db: Connection):
+def get_motor_ids(
+    db: Connection
+):
     """
     Retrieves all motor ids from the database.
     
@@ -16,7 +18,10 @@ def get_motor_ids(db: Connection):
     rows = cursor.fetchall()
     return [row["machine_id"] for row in rows]  # Return a list of machine_ids
 
-def get_motor_data(db: Connection, machine_id: int):
+def get_motor_data(
+    db: Connection, 
+    machine_id: int
+):
     """
     Retrieves latest motor data records from the database.
     
@@ -30,7 +35,13 @@ def get_motor_data(db: Connection, machine_id: int):
     row = cursor.fetchone()
     return dict(row) if row else None
 
-def get_motor_history(db: Connection, machine_id: int, start_time: Optional[str], end_time: Optional[str], limit: int = 1000):
+def get_motor_history(
+    db: Connection, 
+    machine_id: int, 
+    start_time: Optional[str], 
+    end_time: Optional[str], 
+    limit: int = 1000
+):
     cursor = db.cursor()
     query = "SELECT * FROM motor_data WHERE machine_id = ?"
     params: List[object] = [machine_id]

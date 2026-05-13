@@ -3,7 +3,7 @@ from sqlite3 import Connection
 from api.connector import get_db
 from services import motor_service
 from responses import motor_responses
-from api.schemas import MotorTelemetry
+from api.schemas import MotorOverviewResponse, MotorTelemetry
 from typing import List, Optional
 
 router = APIRouter(prefix="/motors", tags=["Motors"])
@@ -103,6 +103,39 @@ async def get_motor_history(
         raise HTTPException(
             status_code=404,
             detail=f"No historical data found for motor with ID: {motor_id}"
+        )
+
+    return data
+
+@router.get("/status/overview", 
+    response_model=MotorOverviewResponse,
+    responses = motor_responses.motors_status_overview_response,
+    summary = "Get an overview of the current status of all motors",
+    description = """
+    Retrieve an overview of the current status of all motors in the system.
+
+    ### Includes
+    - Total number of motors
+    - Count of motors in each status category (idle, running, failure)
+    - Count of motors with anomalies in each status category
+
+    ### Behavior
+    - Returns a summary of the latest status for each motor.
+    - Returns **404** if no motors are found.
+
+    ### Example
+    Used to populate a dashboard overview page showing overall system health.
+    """,
+)
+async def get_motor_status_overview(
+    db: Connection = Depends(get_db)
+):
+    data = motor_service.get_motor_status_overview(db)
+
+    if not data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Failed to retrieve motor status overview from the database."
         )
 
     return data

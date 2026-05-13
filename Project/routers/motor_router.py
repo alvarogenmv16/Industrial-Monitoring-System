@@ -3,11 +3,17 @@ from sqlite3 import Connection
 from api.connector import get_db
 from services import motor_service
 from responses import motor_responses
-from api.schemas import AnomalyEvent, MotorOverviewResponse, MotorTelemetry
+from api.schemas import (
+    AnomalyEvent, 
+    MotorOverviewResponse,
+    MotorTelemetry,
+    AnomalyOverviewResponse
+)
 from typing import List, Optional
 
 router = APIRouter(prefix="/motors", tags=["Motors"])
 
+# Motor IDs
 @router.get("/", 
     response_model=List[int],
     responses = motor_responses.motor_ids_response,
@@ -35,6 +41,7 @@ async def get_motor_ids(
         )
     return data
 
+# Motor telemetry
 @router.get("/{motor_id}/telemetry/latest", 
     response_model=MotorTelemetry,
     responses = motor_responses.motor_telemetry_response,
@@ -72,6 +79,7 @@ async def get_motor_status(
 
     return dict(data)   # Convert sqlite3.Row to a regular dictionary for Pydantic model parsing
 
+# Motor telemetry history
 @router.get("/{motor_id}/telemetry/history", 
     response_model=List[MotorTelemetry],
     responses = motor_responses.motor_telemetry_response,
@@ -107,6 +115,7 @@ async def get_motor_history(
 
     return data
 
+# Motor status overview
 @router.get("/status/overview", 
     response_model=MotorOverviewResponse,
     responses = motor_responses.motors_status_overview_response,
@@ -140,6 +149,7 @@ async def get_motor_status_overview(
 
     return data
 
+# Motor anomalies
 @router.get("/anomalies",
     response_model=List[AnomalyEvent],
     responses = motor_responses.motor_anomalies_response,
@@ -170,6 +180,33 @@ async def get_motor_anomalies(
         raise HTTPException(
             status_code=404,
             detail=f"No anomaly events found in the database."
+        )
+
+    return data
+
+# Anomaly overview
+@router.get(
+    "/anomalies/overview",
+    response_model=AnomalyOverviewResponse,
+    responses=motor_responses.anomaly_overview_response,
+    summary="Anomaly intelligence overview",
+)
+async def get_anomaly_overview(
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    db: Connection = Depends(get_db)
+):
+
+    data = motor_service.get_anomaly_overview(
+        db,
+        start_time=start_time,
+        end_time=end_time
+    )
+
+    if not data:
+        raise HTTPException(
+            status_code=404,
+            detail="No anomaly data found."
         )
 
     return data

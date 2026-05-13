@@ -35,3 +35,9 @@ class MotorSummary(BaseModel):
 class MotorOverviewResponse(BaseModel):
     motors: list[MotorStatus]
     summary: MotorSummary
+
+class AnomalyEvent(BaseModel):
+    machine_id: int
+    timestamp: datetime
+    status: MachineStatus
+    failure_type: str

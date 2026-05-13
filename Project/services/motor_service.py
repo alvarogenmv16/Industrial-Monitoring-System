@@ -1,6 +1,17 @@
 from sqlite3 import Connection
 from typing import List, Optional
-from api.schemas import MotorOverviewResponse, MotorStatus, MotorSummary, MachineStatus, AnomalyEvent
+from collections import defaultdict
+from api.schemas import (
+    MotorOverviewResponse, 
+    MotorStatus, 
+    MotorSummary, 
+    MachineStatus, 
+    AnomalyEvent, 
+    MotorAnomalyBreakdown, 
+    GlobalSummary, 
+    TimeWindow, 
+    AnomalyOverviewResponse
+)
 
 STATUS_MAPPING = {
     0: MachineStatus.idle,
@@ -162,3 +173,92 @@ def get_anomaly(
             )
         )
     return events
+
+def get_anomaly_overview(
+    db: Connection,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
+):
+
+    cursor = db.cursor()
+
+    query = """
+        SELECT timestamp, machine_id, failure_type
+        FROM motor_data
+        WHERE anomaly_flag = 1
+    """
+
+    params: List[object] = []
+
+    if start_time:
+        query += " AND timestamp >= ?"
+        params.append(start_time)
+
+    if end_time:
+        query += " AND timestamp <= ?"
+        params.append(end_time)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    # =========================
+    # ANOMALY BREAKDOWN
+    # =========================
+    data = defaultdict(lambda: defaultdict(int))
+    total_anomalies = 0
+
+    for row in rows:
+
+        machine_id = row["machine_id"]
+        failure_type = row["failure_type"]
+
+        data[machine_id][failure_type] += 1
+        total_anomalies += 1
+
+    motors = []
+
+    for machine_id, failures in data.items():
+
+        motors.append(
+            MotorAnomalyBreakdown(
+                machine_id=machine_id,
+                total_anomalies=sum(failures.values()),
+                by_failure_type=dict(failures)
+            )
+        )
+
+    # =========================
+    # TOP RISKY MACHINES
+    # =========================
+    motors_sorted = sorted(
+        motors,
+        key=lambda x: x.total_anomalies,
+        reverse=True
+    )
+
+    top_risky_machines = [
+        m.machine_id for m in motors_sorted[:5]
+    ]
+
+    # =========================
+    # GLOBAL SUMMARY
+    # =========================
+    summary = GlobalSummary(
+        total_anomalies=total_anomalies,
+        unique_machines_affected=len(data)
+    )
+
+    # =========================
+    # TIME WINDOW
+    # =========================
+    time_window = TimeWindow(
+        start=start_time,
+        end=end_time
+    )
+
+    return AnomalyOverviewResponse(
+        time_window=time_window,
+        global_summary=summary,
+        top_risky_machines=top_risky_machines,
+        motors=motors_sorted
+    )

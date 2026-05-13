@@ -103,3 +103,32 @@ motors_status_overview_response = {
         },
     },
 }
+
+# get_anomalies
+motor_anomalies_response = {
+    200: {
+        "description": "Retrieve recent anomaly events",
+        "content": {
+            "application/json": {
+                "example": [
+                    {
+                        "machine_id": "MOTOR_01",
+                        "timestamp": "2025-01-01T01:11:11",
+                        "status": "failure",
+                        "failure_type": "overheating"
+                    }
+                ]
+            }
+        },
+    },
+    404: {
+        "description": "No anomaly events found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "No anomaly events found in the database."
+                }
+            }
+        },
+    },
+}

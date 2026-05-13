@@ -1,5 +1,12 @@
 from sqlite3 import Connection
 from typing import List, Optional
+from api.schemas import MotorOverviewResponse, MotorStatus, MotorSummary, MachineStatus
+
+STATUS_MAPPING = {
+    0: MachineStatus.idle,
+    1: MachineStatus.running,
+    2: MachineStatus.failure
+}
 
 def get_motor_ids(
     db: Connection
@@ -58,3 +65,67 @@ def get_motor_history(
     cursor.execute(query, params)
     rows = cursor.fetchall()
     return [dict(row) for row in rows]
+
+def get_motor_status_overview(
+    db: Connection
+):
+    cursor = db.cursor()
+    query = """
+        SELECT 
+            md.machine_id,
+            md.machine_status,
+            md.anomaly_flag
+        FROM motor_data md
+        INNER JOIN(
+            SELECT machine_id,
+            MAX(timestamp) AS latest_timestamp
+            FROM motor_data
+            GROUP BY machine_id
+        ) AS latest ON 
+        md.machine_id = latest.machine_id 
+        AND md.timestamp = latest.latest_timestamp
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    motor = []
+
+    summary = {
+        "idle":0,
+        "running":0,
+        "failure":0,
+        "idle_with_anomaly":0,
+        "running_with_anomaly":0,
+        "failure_with_anomaly":0
+    }
+
+    for row in rows:
+        status = MachineStatus(row["machine_status"])
+        anomaly = bool(row["anomaly_flag"])
+
+        motor.append(
+            MotorStatus(
+                machine_id=row["machine_id"],
+                status=status,
+                anomaly=anomaly
+            )
+        )
+
+        # Count status
+        if status == MachineStatus.idle:
+            summary["idle"] += 1
+            if anomaly:
+                summary["idle_with_anomaly"] += 1
+        elif status == MachineStatus.running:
+            summary["running"] += 1
+            if anomaly:
+                summary["running_with_anomaly"] += 1
+        elif status == MachineStatus.failure:
+            summary["failure"] += 1
+            if anomaly:
+                summary["failure_with_anomaly"] += 1
+
+    return MotorOverviewResponse(
+        summary=MotorSummary(**summary),
+        motors=motor
+    )

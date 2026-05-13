@@ -54,3 +54,52 @@ motor_telemetry_response = {
         },
     },
 }
+
+# get_motors_status_overview
+motors_status_overview_response = {
+    200: {
+        "description": "Retrieve operational overview for all motors",
+        "content": {
+            "application/json": {
+                "example": {
+                    "summary": {
+                        "idle": 2,
+                        "running": 7,
+                        "failure": 1,
+                        "idle_with_anomaly": 0,
+                        "running_with_anomaly": 2,
+                        "failure_with_anomaly": 1
+                    },
+                    "motors": [
+                        {
+                            "machine_id": "MOTOR_01",
+                            "status": "running",
+                            "anomaly": False
+                        },
+                        {
+                            "machine_id": "MOTOR_02",
+                            "status": "running",
+                            "anomaly": True
+                        },
+                        {
+                            "machine_id": "MOTOR_03",
+                            "status": "failure",
+                            "anomaly": True
+                        }
+                    ]
+                }
+            }
+        },
+    },
+
+    404: {
+        "description": "Failed to retrieve motors overview",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Failed to retrieve motors overview."
+                }
+            }
+        },
+    },
+}

@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 class MotorTelemetry(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -35,3 +35,28 @@ class MotorSummary(BaseModel):
 class MotorOverviewResponse(BaseModel):
     motors: list[MotorStatus]
     summary: MotorSummary
+
+class AnomalyEvent(BaseModel):
+    machine_id: int
+    timestamp: datetime
+    status: MachineStatus
+    failure_type: str
+
+class TimeWindow(BaseModel):
+    start: str
+    end: str
+
+class MotorAnomalyBreakdown(BaseModel):
+    machine_id: int 
+    total_anomalies: int
+    by_failure_type: Dict[str, int]
+
+class GlobalSummary(BaseModel):
+    total_anomalies: int
+    unique_machines_affected: int
+    
+class AnomalyOverviewResponse(BaseModel):
+    time_window: TimeWindow
+    global_summary: GlobalSummary
+    top_risky_machines: List[int]
+    motors: List[MotorAnomalyBreakdown]

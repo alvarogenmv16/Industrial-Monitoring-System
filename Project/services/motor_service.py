@@ -1,6 +1,6 @@
 from sqlite3 import Connection
 from typing import List, Optional
-from api.schemas import MotorOverviewResponse, MotorStatus, MotorSummary, MachineStatus
+from api.schemas import MotorOverviewResponse, MotorStatus, MotorSummary, MachineStatus, AnomalyEvent
 
 STATUS_MAPPING = {
     0: MachineStatus.idle,
@@ -129,3 +129,36 @@ def get_motor_status_overview(
         summary=MotorSummary(**summary),
         motors=motor
     )
+
+def get_anomaly(
+    db: Connection
+) -> List[AnomalyEvent]:
+    cursor = db.cursor()
+    query = """
+        SELECT 
+            machine_id,
+            timestamp,
+            machine_status,
+            anomaly_flag,
+            failure_type
+        FROM motor_data
+        WHERE anomaly_flag = 1
+        ORDER BY timestamp DESC
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    events: List[AnomalyEvent] = []
+
+    for row in rows:
+        status = MachineStatus(row["machine_status"])
+
+        events.append(
+            AnomalyEvent(
+                machine_id=row["machine_id"],
+                timestamp=row["timestamp"],
+                status=status,
+                failure_type=row["failure_type"]
+            )
+        )
+    return events

@@ -3,7 +3,7 @@ from sqlite3 import Connection
 from api.connector import get_db
 from services import motor_service
 from responses import motor_responses
-from api.schemas import MotorOverviewResponse, MotorTelemetry
+from api.schemas import AnomalyEvent, MotorOverviewResponse, MotorTelemetry
 from typing import List, Optional
 
 router = APIRouter(prefix="/motors", tags=["Motors"])
@@ -136,6 +136,40 @@ async def get_motor_status_overview(
         raise HTTPException(
             status_code=404,
             detail=f"Failed to retrieve motor status overview from the database."
+        )
+
+    return data
+
+@router.get("/anomalies",
+    response_model=List[AnomalyEvent],
+    responses = motor_responses.motor_anomalies_response,
+    summary = "Get recent anomaly events across all motors",
+    description = """
+    Retrieve a list of recent anomaly events detected across all motors.
+
+    ### Includes
+    - Machine ID
+    - Timestamp of the anomaly
+    - Status at the time of anomaly
+    - Failure type (if applicable)
+
+    ### Behavior
+    - Returns a list of anomaly events sorted by most recent first.
+    - Returns **404** if no anomalies are found.
+    
+    ### Example
+    Used to populate an anomaly log or alerting system in the frontend.
+    """
+)
+async def get_motor_anomalies(
+    db: Connection = Depends(get_db)
+):
+    data = motor_service.get_anomaly(db)
+
+    if not data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No anomaly events found in the database."
         )
 
     return data

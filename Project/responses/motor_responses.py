@@ -132,3 +132,48 @@ motor_anomalies_response = {
         },
     },
 }
+
+# get_anomaly_overview
+anomaly_overview_response = {
+    200: {
+        "description": "Anomaly overview for dashboard",
+        "content": {
+            "application/json": {
+                "example": {
+                    "time_window": {
+                        "start": "2026-05-12T00:00:00",
+                        "end": "2026-05-13T00:00:00"
+                    },
+                    "global_summary": {
+                        "total_anomalies": 23,
+                        "unique_machines_affected": 4
+                    },
+                    "top_risky_machines": [
+                        "MOTOR_02",
+                        "MOTOR_05"
+                    ],
+                    "motors": [
+                        {
+                            "machine_id": "MOTOR_01",
+                            "total_anomalies": 5,
+                            "by_failure_type": {
+                                "overheat": 2,
+                                "vibration": 3
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+    },
+    404: {
+        "description": "No anomaly data found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "No anomaly data found"
+                }
+            }
+        },
+    },
+}

@@ -3,6 +3,7 @@ import { getMotors } from "./services/motors";
 
 function App() {
   const [motors, setMotors] = useState<number[]>([]);
+  const [selectedMotor, setSelectedMotor] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadMotors() {
@@ -10,7 +11,7 @@ function App() {
         const data = await getMotors();
         setMotors(data.motor_ids);
       } catch (err) {
-        console.error("Error cargando motores:", err);
+        console.error("Error loading motors:", err);
       }
     }
 
@@ -23,11 +24,24 @@ function App() {
 
       <h2>Motors:</h2>
 
-      <ul>
+      <select
+        value={selectedMotor ?? ""}
+        onChange={(e) => setSelectedMotor(Number(e.target.value))}
+      >
+        <option value="" disabled>
+          -- Select a motor --
+        </option>
+
         {motors.map((m) => (
-          <li key={m}>Motor {m}</li>
+          <option key={m} value={m}>
+            Motor {m}
+          </option>
         ))}
-      </ul>
+      </select>
+
+      {selectedMotor && (
+        <p>Selected Motor ID: {selectedMotor}</p>
+      )}
     </div>
   );
 }

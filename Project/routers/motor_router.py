@@ -4,6 +4,7 @@ from api.connector import get_db
 from services import motor_service
 from responses import motor_responses
 from api.schemas import (
+    MotorIDResponse,
     AnomalyEvent, 
     MotorOverviewResponse,
     MotorTelemetry,
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/motors", tags=["Motors"])
 
 # Motor IDs
 @router.get("/", 
-    response_model=List[int],
+    response_model=MotorIDResponse,
     responses = motor_responses.motor_ids_response,
     summary = "Get all motor IDs",
     description = """
@@ -39,7 +40,7 @@ async def get_motor_ids(
             status_code=404,
             detail=f"Failed to retrieve motor IDs from the database."
         )
-    return data
+    return MotorIDResponse(motor_ids=data)
 
 # Motor telemetry
 @router.get("/{motor_id}/telemetry/latest", 

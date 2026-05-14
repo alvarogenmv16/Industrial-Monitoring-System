@@ -3,6 +3,9 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Dict, List
 
+class MotorIDResponse(BaseModel):
+    motor_ids: List[int]
+
 class MotorTelemetry(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     timestamp: datetime

@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { getMotors } from "./services/motors";
+import { getMotors, getLatestMotor, getMotorHistory  } from "./services/motors";
 
 function App() {
   const [motors, setMotors] = useState<number[]>([]);
   const [selectedMotor, setSelectedMotor] = useState<number | null>(null);
+  
+  const [latest, setLatest] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
 
+  // Load motors on mount
   useEffect(() => {
     async function loadMotors() {
       try {
@@ -18,30 +22,77 @@ function App() {
     loadMotors();
   }, []);
 
+
+  // Load latest and history when selectedMotor changes
+  useEffect(() => {
+    if (!selectedMotor) return;
+
+    const motorId = selectedMotor;
+
+    async function loadMotorData() {
+      try {
+        const latestData = await getLatestMotor(motorId);
+        const historyData = await getMotorHistory(motorId);
+
+        setLatest(latestData);
+        setHistory(historyData);
+      } catch (err) {
+        console.error("Error loading motor data:", err);
+      }
+    }
+
+    loadMotorData();
+  }, [selectedMotor]);
+
   return (
-    <div>
-      <h1>Industrial Monitoring</h1>
+    <div style={{ display: "flex", gap: "40px", padding: "20px" }}>
 
-      <h2>Motors:</h2>
+      {/* LEFT SIDE */}
+      <div style={{ flex: 2 }}>
+        <h1>Industrial Monitoring</h1>
 
-      <select
-        value={selectedMotor ?? ""}
-        onChange={(e) => setSelectedMotor(Number(e.target.value))}
-      >
-        <option value="" disabled>
-          -- Select a motor --
-        </option>
+        <h2>Select Motor</h2>
 
-        {motors.map((m) => (
-          <option key={m} value={m}>
-            Motor {m}
+        <select
+          value={selectedMotor ?? ""}
+          onChange={(e) => setSelectedMotor(Number(e.target.value))}
+        >
+          <option value="" disabled>
+            -- Select a motor --
           </option>
-        ))}
-      </select>
 
-      {selectedMotor && (
-        <p>Selected Motor ID: {selectedMotor}</p>
-      )}
+          {motors.map((m) => (
+            <option key={m} value={m}>
+              Motor {m}
+            </option>
+          ))}
+        </select>
+
+        <h3>History (raw preview)</h3>
+
+        <pre style={{ background: "#eee", padding: "10px" }}>
+          {JSON.stringify(history.slice(-5), null, 2)}
+        </pre>
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div style={{ flex: 1 }}>
+        <h2>Latest Data</h2>
+
+        {latest ? (
+          <div style={{ background: "#f5f5f5", padding: "10px" }}>
+            <p><b>Temperature:</b> {latest.temperature}</p>
+            <p><b>Vibration:</b> {latest.vibration}</p>
+            <p><b>Pressure:</b> {latest.pressure}</p>
+            <p><b>Energy:</b> {latest.energy_consumption}</p>
+            <p><b>Status:</b> {latest.machine_status}</p>
+            <p><b>Time:</b> {latest.timestamp}</p>
+          </div>
+        ) : (
+          <p>No motor selected</p>
+        )}
+      </div>
+
     </div>
   );
 }

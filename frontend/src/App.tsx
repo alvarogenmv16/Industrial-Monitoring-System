@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
-import { getMotors, getLatestMotor, getMotorHistory  } from "./services/motors";
+import {
+  getMotors,
+  getLatestMotor,
+  getMotorHistory,
+} from "./services/motors";
 import TelemetryChart from "./components/TelemetryChart";
 
 function App() {
   const [motors, setMotors] = useState<number[]>([]);
   const [selectedMotor, setSelectedMotor] = useState<number | null>(null);
-  
+
   const [latest, setLatest] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+
+  // NEW: selected metric
+  const [metric, setMetric] = useState<string>("temperature");
 
   // Load motors on mount
   useEffect(() => {
@@ -23,10 +30,9 @@ function App() {
     loadMotors();
   }, []);
 
-
   // Load latest and history when selectedMotor changes
   useEffect(() => {
-    if (!selectedMotor) return;
+    if (selectedMotor === null) return;
 
     const motorId = selectedMotor;
 
@@ -47,7 +53,6 @@ function App() {
 
   return (
     <div style={{ display: "flex", gap: "40px", padding: "20px" }}>
-
       {/* LEFT SIDE */}
       <div style={{ flex: 2 }}>
         <h1>Industrial Monitoring</h1>
@@ -69,9 +74,24 @@ function App() {
           ))}
         </select>
 
-        <h3>Temperature History</h3>
+        {/* NEW: metric selector */}
+        <h2>Select Metric</h2>
 
-        <TelemetryChart data={history} />
+        <select
+          value={metric}
+          onChange={(e) => setMetric(e.target.value)}
+        >
+          <option value="temperature">Temperature</option>
+          <option value="vibration">Vibration</option>
+          <option value="pressure">Pressure</option>
+          <option value="energy_consumption">
+            Energy Consumption
+          </option>
+        </select>
+
+        <h3>History</h3>
+
+        <TelemetryChart data={history} metric={metric} />
       </div>
 
       {/* RIGHT SIDE */}
@@ -91,7 +111,6 @@ function App() {
           <p>No motor selected</p>
         )}
       </div>
-
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMotors, getLatestMotor, getMotorHistory  } from "./services/motors";
+import TelemetryChart from "./components/TelemetryChart";
 
 function App() {
   const [motors, setMotors] = useState<number[]>([]);
@@ -68,11 +69,9 @@ function App() {
           ))}
         </select>
 
-        <h3>History (raw preview)</h3>
+        <h3>Temperature History</h3>
 
-        <pre style={{ background: "#eee", padding: "10px" }}>
-          {JSON.stringify(history.slice(-5), null, 2)}
-        </pre>
+        <TelemetryChart data={history} />
       </div>
 
       {/* RIGHT SIDE */}

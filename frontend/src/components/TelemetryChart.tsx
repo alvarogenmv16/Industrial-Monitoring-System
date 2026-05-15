@@ -37,13 +37,26 @@ export default function TelemetryChart({ data }: Props) {
                 month: "2-digit"
               });
             }}
-            tick= {{fontSize:12}}
+            tick={{fontSize:12}}
             minTickGap={30}
+            label={{
+                value: "Date",
+                position: "insideBottom",
+                offset: -5,
+            }}
           />
 
           <YAxis 
             unit = "°C"
-            tick= {{fontSize:12}}
+            label={{
+                value: "Temperature (°C)",
+                angle: -90,
+                position: "insideLeft",
+                dx: 0,
+                style: {
+                    textAnchor: "middle"
+                },
+            }}
           />
                 
           <Tooltip

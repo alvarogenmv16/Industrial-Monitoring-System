@@ -18,13 +18,54 @@ interface TelemetryPoint {
 
 interface Props {
   data: TelemetryPoint[];
+  metric: string;
 }
 
-export default function TelemetryChart({ data }: Props) {
+const metricConfig: Record<
+  string,
+  { label: string; unit: string; color: string }
+> = {
+  temperature: {
+    label: "Temperature",
+    unit: "°C",
+    color: "#ef4444",
+  },
+  vibration: {
+    label: "Vibration",
+    unit: "mm/s",
+    color: "#3b82f6",
+  },
+  pressure: {
+    label: "Pressure",
+    unit: "bar",
+    color: "#10b981",
+  },
+  energy_consumption: {
+    label: "Energy",
+    unit: "kWh",
+    color: "#f59e0b",
+  },
+};
+
+export default function TelemetryChart({
+  data,
+  metric,
+}: Props) {
+  const config =
+    metricConfig[metric] || metricConfig.temperature;
+
   return (
     <div style={{ width: "100%", height: 400 }}>
       <ResponsiveContainer>
-        <LineChart data={data}>
+        <LineChart
+          data={data}
+          margin={{
+            top: 20,
+            right: 30,
+            left: 40,
+            bottom: 40,
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
 
           <XAxis
@@ -34,41 +75,49 @@ export default function TelemetryChart({ data }: Props) {
 
               return date.toLocaleDateString("es-ES", {
                 day: "2-digit",
-                month: "2-digit"
+                month: "2-digit",
               });
             }}
-            tick={{fontSize:12}}
+            tick={{ fontSize: 12 }}
             minTickGap={30}
             label={{
-                value: "Date",
-                position: "insideBottom",
-                offset: -5,
+              value: "Date",
+              position: "insideBottom",
+              offset: -5,
             }}
           />
 
-          <YAxis 
-            unit = "°C"
+          <YAxis
+            unit={config.unit}
+            tick={{ fontSize: 12 }}
             label={{
-                value: "Temperature (°C)",
-                angle: -90,
-                position: "insideLeft",
-                dx: 0,
-                style: {
-                    textAnchor: "middle"
-                },
+              value: `${config.label} (${config.unit})`,
+              angle: -90,
+              position: "insideLeft",
+              dx: -10,
+              style: {
+                textAnchor: "middle",
+              },
             }}
           />
-                
+
           <Tooltip
             labelFormatter={(value) =>
-              new Date(value).toLocaleString()
+              new Date(value).toLocaleString("es-ES")
             }
+            formatter={(value: any) => {
+              if (value === undefined || value === null) {
+                return ["-", config.label];
+            }
+
+              return [`${value} ${config.unit}`, config.label];
+            }}
           />
 
           <Line
             type="monotone"
-            dataKey="temperature"
-            stroke="#ef4444"
+            dataKey={metric}
+            stroke={config.color}
             strokeWidth={2}
             dot={false}
           />

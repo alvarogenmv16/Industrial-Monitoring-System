@@ -13,8 +13,9 @@ function App() {
   const [latest, setLatest] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
 
-  // NEW: selected metric
-  const [metric, setMetric] = useState<string>("temperature");
+  const [metric, setMetric] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Load motors on mount
   useEffect(() => {
@@ -51,6 +52,24 @@ function App() {
     loadMotorData();
   }, [selectedMotor]);
 
+  const filteredHistory = history.filter((item) => {
+    if (!startDate && !endDate) return true;
+
+    const time = new Date(item.timestamp).getTime();
+
+    if (startDate) {
+      const start = new Date(startDate).getTime();
+      if (time < start) return false;
+    }
+
+    if (endDate) {
+      const end = new Date(endDate).getTime();
+      if (time > end) return false;
+    }
+
+    return true;
+  });
+
   return (
     <div style={{ display: "flex", gap: "40px", padding: "20px" }}>
       {/* LEFT SIDE */}
@@ -78,20 +97,39 @@ function App() {
         <h2>Select Metric</h2>
 
         <select
-          value={metric}
+          value={metric ?? ""}
           onChange={(e) => setMetric(e.target.value)}
         >
+          <option value="" disabled>
+            -- Select a metric --
+          </option>
           <option value="temperature">Temperature</option>
           <option value="vibration">Vibration</option>
           <option value="pressure">Pressure</option>
-          <option value="energy_consumption">
-            Energy Consumption
-          </option>
+          <option value="energy_consumption">Energy Consumption</option>
         </select>
+        
+        <h3>Filter by date</h3>
+
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
 
         <h3>History</h3>
 
-        <TelemetryChart data={history} metric={metric} />
+        {metric && (
+          <TelemetryChart data={filteredHistory} metric={metric} />
+        )}
       </div>
 
       {/* RIGHT SIDE */}

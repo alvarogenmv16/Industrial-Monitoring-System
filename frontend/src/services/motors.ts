@@ -11,11 +11,23 @@ export async function getMotors() {
 }
 
 // Latest motor data
-export async function getLatestMotor(motorId: number) {
-  const res = await api.get(`/motors/${motorId}/telemetry/latest`);
+export async function getLatestMotor(
+  motorId: number,
+  start_time?: string,
+  end_time?: string
+) {
+  const res = await api.get(
+    `/motors/${motorId}/telemetry/latest`,
+    {
+      params: {
+        start_time,
+        end_time,
+      },
+    }
+  );
+
   return res.data;
 }
-
 // Historical motor data
 export async function getMotorHistory(motorId: number) {
   const res = await api.get(`/motors/${motorId}/telemetry/history`);

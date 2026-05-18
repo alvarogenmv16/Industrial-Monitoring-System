@@ -65,35 +65,34 @@ function App() {
   // ======================
 
   useEffect(() => {
-    if (selectedMotor === null) return;
+  if (selectedMotor === null) return;
 
-    const motorID = selectedMotor;
-    
-    async function loadMotorData() {
-      try {
-        const latestData = await getLatestMotor(
-          motorID
-        );
+  const motorId = selectedMotor;
+  async function loadMotorData() {
+    try {
+      // HISTORY (sin cambio, sigue completo)
+      const historyData = await getMotorHistory(motorId);
 
-        const historyData = await getMotorHistory(
-          motorID
-        );
+      setHistory(historyData);
 
-        setLatest(latestData);
-        setHistory(historyData);
+      // RESET SLIDER
+      setRange([0, historyData.length - 1]);
 
-        // Reset slider range
-        setRange([0, historyData.length - 1]);
-      } catch (err) {
-        console.error(
-          "Error loading motor data:",
-          err
-        );
-      }
+      // LATEST DATA (AHORA CON RANGO)
+      const latestData = await getLatestMotor(
+        motorId,
+        startDate || undefined,
+        endDate || undefined
+      );
+
+      setLatest(latestData);
+    } catch (err) {
+      console.error("Error loading motor data:", err);
     }
+  }
 
-    loadMotorData();
-  }, [selectedMotor]);
+  loadMotorData();
+}, [selectedMotor, startDate, endDate]);
 
   // ======================
   // LOAD STATUS OVERVIEW

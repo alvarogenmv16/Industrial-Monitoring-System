@@ -37,20 +37,34 @@ def get_motor_ids(
     return [row["machine_id"] for row in rows]  # Return a list of machine_ids
 
 def get_motor_data(
-    db: Connection, 
-    machine_id: int
+    db: Connection,
+    machine_id: int,
+    start_time: str | None = None,
+    end_time: str | None = None
 ):
-    """
-    Retrieves latest motor data records from the database.
-    
-    Args:
-        db (Connection): An active SQLite database connection.
-        machine_id (int): The ID of the machine for which to retrieve data.
-    """
     cursor = db.cursor()
-    query = "SELECT * FROM motor_data WHERE machine_id = ? ORDER BY timestamp DESC LIMIT 1"
-    cursor.execute(query, (machine_id,))
+
+    query = """
+        SELECT *
+        FROM motor_data
+        WHERE machine_id = ?
+    """
+
+    params = [machine_id]
+
+    if start_time:
+        query += " AND timestamp >= ?"
+        params.append(start_time)
+
+    if end_time:
+        query += " AND timestamp <= ?"
+        params.append(end_time)
+
+    query += " ORDER BY timestamp DESC LIMIT 1"
+
+    cursor.execute(query, params)
     row = cursor.fetchone()
+
     return dict(row) if row else None
 
 def get_motor_history(

@@ -33,12 +33,15 @@ function App() {
   const [endDate, setEndDate] = useState("");
 
   // STATUS + ANOMALIES
-  const [statusOverview, setStatusOverview] = useState<any>(null);
+  const [statusOverview, setStatusOverview] =
+    useState<any>(null);
 
   const [anomaliesOverview, setAnomaliesOverview] =
     useState<any>(null);
 
-  const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [anomalies, setAnomalies] = useState<any[]>(
+    []
+  );
 
   // ======================
   // LOAD MOTORS
@@ -65,6 +68,7 @@ function App() {
     if (selectedMotor === null) return;
 
     const motorID = selectedMotor;
+    
     async function loadMotorData() {
       try {
         const latestData = await getLatestMotor(
@@ -78,10 +82,13 @@ function App() {
         setLatest(latestData);
         setHistory(historyData);
 
-        // Reset slider range when loading new motor
+        // Reset slider range
         setRange([0, historyData.length - 1]);
       } catch (err) {
-        console.error("Error loading motor data:", err);
+        console.error(
+          "Error loading motor data:",
+          err
+        );
       }
     }
 
@@ -93,17 +100,21 @@ function App() {
   // ======================
 
   useEffect(() => {
-    async function loadStatus() {
-      try {
-        const data = await getMotorsStatusOverview();
-        setStatusOverview(data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  async function loadStatus() {
+    try {
+      const data = await getMotorsStatusOverview(
+        startDate || undefined,
+        endDate || undefined
+      );
 
-    loadStatus();
-  }, []);
+      setStatusOverview(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadStatus();
+  }, [startDate, endDate]);
 
   // ======================
   // LOAD ANOMALIES
@@ -115,7 +126,10 @@ function App() {
         const data = await getMotorAnomalies();
         setAnomalies(data);
       } catch (err) {
-        console.error("Error loading anomalies:", err);
+        console.error(
+          "Error loading anomalies:",
+          err
+        );
       }
     }
 
@@ -158,7 +172,9 @@ function App() {
     let end = history.length - 1;
 
     if (startDate) {
-      const startIndex = findClosestIndex(startDate);
+      const startIndex = findClosestIndex(
+        startDate
+      );
 
       if (startIndex !== -1) {
         start = startIndex;
@@ -166,7 +182,9 @@ function App() {
     }
 
     if (endDate) {
-      const endIndex = findClosestIndex(endDate);
+      const endIndex = findClosestIndex(
+        endDate
+      );
 
       if (endIndex !== -1) {
         end = endIndex;
@@ -183,6 +201,38 @@ function App() {
   const filteredHistory = history.slice(
     range[0],
     range[1] + 1
+  );
+
+  const filteredAnomalies = anomalies.filter(
+  (a: any) => {
+    // Remove "Normal"
+    if (a.failure_type === "Normal") {
+      return false;
+    }
+
+    // No date filters active
+    if (!startDate && !endDate) {
+      return true;
+    }
+
+    const anomalyDate = a.timestamp.slice(0, 10);
+
+    // Start only
+    if (startDate && !endDate) {
+      return anomalyDate >= startDate;
+    }
+
+    // End only
+    if (!startDate && endDate) {
+      return anomalyDate <= endDate;
+    }
+
+    // Both
+    return (
+      anomalyDate >= startDate &&
+      anomalyDate <= endDate
+    );
+  }
   );
 
   function findClosestIndex(date: string) {
@@ -219,7 +269,8 @@ function App() {
           background: colors.panel,
           padding: "15px",
           borderRadius: "10px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
         {/* MOTOR SELECT */}
@@ -330,9 +381,27 @@ function App() {
             min={0}
             max={Math.max(history.length - 1, 0)}
             value={range}
-            onChange={(value) =>
-              setRange(value as number[])
-            }
+            onChange={(value) => {
+              const newRange = value as number[];
+
+              setRange(newRange);
+
+              // Sync dates with slider
+              const startItem = history[newRange[0]];
+              const endItem = history[newRange[1]];
+
+              if (startItem) {
+                setStartDate(
+                  startItem.timestamp.slice(0, 10)
+                );
+              }
+
+              if (endItem) {
+                setEndDate(
+                  endItem.timestamp.slice(0, 10)
+                );
+              }
+            }}
           />
 
           <div
@@ -379,7 +448,6 @@ function App() {
             borderRadius: "10px",
           }}
         >
-          {/* TELEMETRY */}
           <h2>Telemetry History</h2>
 
           {metric ? (
@@ -388,293 +456,11 @@ function App() {
               metric={metric}
             />
           ) : (
-            <p>Select a metric to display the chart.</p>
+            <p>
+              Select a metric to display the
+              chart.
+            </p>
           )}
-
-          {/* DASHBOARD PANELS */}
-          <div
-            style={{
-              display: "flex",
-              gap: "20px",
-              marginTop: "20px",
-              alignItems: "stretch",
-            }}
-          >
-            {/* STATUS OVERVIEW */}
-            <div
-              style={{
-                flex: 1,
-                background: "#1f1f1f",
-                borderRadius: "10px",
-                padding: "20px",
-              }}
-            >
-              <h3>Status Overview</h3>
-
-              {statusOverview?.summary && (
-                <>
-                  {/* KPI GRID */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "1fr 1fr",
-                      gap: "10px",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        background: "#262626",
-                        padding: "12px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          opacity: 0.7,
-                        }}
-                      >
-                        Running
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: "24px",
-                          color: "#52c41a",
-                        }}
-                      >
-                        {
-                          statusOverview.summary
-                            .running
-                        }
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#262626",
-                        padding: "12px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          opacity: 0.7,
-                        }}
-                      >
-                        Failure
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: "24px",
-                          color: "#ff4d4f",
-                        }}
-                      >
-                        {
-                          statusOverview.summary
-                            .failure
-                        }
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#262626",
-                        padding: "12px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          opacity: 0.7,
-                        }}
-                      >
-                        Running + Anomaly
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: "24px",
-                          color: "#faad14",
-                        }}
-                      >
-                        {
-                          statusOverview.summary
-                            .running_with_anomaly
-                        }
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#262626",
-                        padding: "12px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          opacity: 0.7,
-                        }}
-                      >
-                        Idle
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: "24px",
-                          color: "#8c8c8c",
-                        }}
-                      >
-                        {
-                          statusOverview.summary
-                            .idle
-                        }
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* MACHINE LIST */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                      maxHeight: "300px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    {statusOverview.motors.map(
-                      (m: any) => (
-                        <div
-                          key={m.machine_id}
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            background: "#262626",
-                            padding: "10px",
-                            borderRadius: "6px",
-                          }}
-                        >
-                          <span>
-                            Machine {m.machine_id}
-                          </span>
-
-                          <span>
-                            {m.status === 1 &&
-                              "🟢 Running"}
-
-                            {m.status === 2 &&
-                              "🔴 Failure"}
-
-                            {m.status === 0 &&
-                              "⚪ Idle"}
-
-                            {m.anomaly && " ⚠"}
-                          </span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* RECENT ANOMALIES */}
-            <div
-              style={{
-                flex: 1,
-                background: "#1f1f1f",
-                borderRadius: "10px",
-                padding: "20px",
-              }}
-            >
-              <h3>Recent Anomalies</h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  maxHeight: "420px",
-                  overflowY: "auto",
-                }}
-              >
-                {anomalies
-                  .slice(0, 15)
-                  .map(
-                    (
-                      a: any,
-                      idx: number
-                    ) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "#262626",
-                          padding: "12px",
-                          borderRadius: "8px",
-                          borderLeft:
-                            "4px solid #ff4d4f",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          <strong>
-                            Machine {a.machine_id}
-                          </strong>
-
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              opacity: 0.7,
-                            }}
-                          >
-                            {new Date(
-                              a.timestamp
-                            ).toLocaleString()}
-                          </span>
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize: "14px",
-                          }}
-                        >
-                          Status:{" "}
-                          {a.status === 1
-                            ? "Running"
-                            : "Failure"}
-                        </div>
-
-                        <div
-                          style={{
-                            marginTop: "4px",
-                            fontSize: "13px",
-                            color: "#faad14",
-                          }}
-                        >
-                          Failure Type:{" "}
-                          {a.failure_type}
-                        </div>
-                      </div>
-                    )
-                  )}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* RIGHT SIDE */}
@@ -707,7 +493,9 @@ function App() {
 
               <p>
                 <b>Energy:</b>{" "}
-                {latest.energy_consumption}
+                {
+                  latest.energy_consumption
+                }
               </p>
 
               <p>
@@ -725,6 +513,285 @@ function App() {
               No motor selected
             </p>
           )}
+        </div>
+      </div>
+
+      {/* STATUS + RECENT ANOMALIES */}
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          alignItems: "stretch",
+        }}
+      >
+        {/* STATUS OVERVIEW */}
+        <div
+          style={{
+            flex: 1,
+            background: colors.panel,
+            borderRadius: "10px",
+            padding: "20px",
+          }}
+        >
+          <h2>Status Overview</h2>
+
+          {statusOverview?.summary && (
+            <>
+              {/* KPI GRID */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "1fr 1fr",
+                  gap: "10px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    background: colors.background,
+                    padding: "12px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Running
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      color: "#52c41a",
+                    }}
+                  >
+                    {
+                      statusOverview.summary
+                        .running
+                    }
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: colors.background,
+                    padding: "12px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Failure
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      color: "#ff4d4f",
+                    }}
+                  >
+                    {
+                      statusOverview.summary
+                        .failure
+                    }
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: colors.background,
+                    padding: "12px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Running + Anomaly
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      color: "#faad14",
+                    }}
+                  >
+                    {
+                      statusOverview.summary
+                        .running_with_anomaly
+                    }
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: colors.background,
+                    padding: "12px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Idle
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      color: "#8c8c8c",
+                    }}
+                  >
+                    {
+                      statusOverview.summary
+                        .idle
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* MACHINE LIST */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  maxHeight: "350px",
+                  overflowY: "auto",
+                }}
+              >
+                {statusOverview.motors.map(
+                  (m: any) => (
+                    <div
+                      key={m.machine_id}
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        background: colors.background,
+                        padding: "10px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <span>
+                        Machine {m.machine_id}
+                      </span>
+
+                      <span>
+                        {m.status === 1 &&
+                          "🟢 Running"}
+
+                        {m.status === 2 &&
+                          "🔴 Failure"}
+
+                        {m.status === 0 &&
+                          "⚪ Idle"}
+
+                        {m.anomaly && " ⚠"}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* RECENT ANOMALIES */}
+        <div
+          style={{
+            flex: 1,
+            background: colors.panel,
+            borderRadius: "10px",
+            padding: "20px",
+          }}
+        >
+          <h2>Recent Anomalies</h2>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              maxHeight: "500px",
+              overflowY: "auto",
+            }}
+          >
+            {filteredAnomalies
+              .slice(0, 15)
+              .map((a: any, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: "#262626",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    borderLeft:
+                      "4px solid #ff4d4f",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <strong>
+                      Machine {a.machine_id}
+                    </strong>
+
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {new Date(
+                        a.timestamp
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "14px",
+                    }}
+                  >
+                    Status:{" "}
+                    {a.status === 1
+                      ? "Running"
+                      : "Failure"}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "4px",
+                      fontSize: "13px",
+                      color: "#faad14",
+                    }}
+                  >
+                    Failure Type:{" "}
+                    {a.failure_type}
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
 
@@ -752,12 +819,16 @@ function App() {
               }}
             >
               📅{" "}
-              {anomaliesOverview.time_window
-                .start}{" "}
+              {
+                anomaliesOverview.time_window
+                  .start
+              }{" "}
               →
               {" "}
-              {anomaliesOverview.time_window
-                .end}
+              {
+                anomaliesOverview.time_window
+                  .end
+              }
             </div>
 
             {/* GLOBAL KPIs */}
@@ -813,7 +884,8 @@ function App() {
                       key={id}
                       style={{
                         padding: "6px 10px",
-                        background: colors.background,
+                        background:
+                          "#ff4d4f",
                         borderRadius: "6px",
                         color: "white",
                         fontSize: "12px",
@@ -851,7 +923,9 @@ function App() {
 
                       <span>
                         Total:{" "}
-                        {m.total_anomalies}
+                        {
+                          m.total_anomalies
+                        }
                       </span>
                     </div>
 
@@ -873,10 +947,12 @@ function App() {
                           <span
                             key={type}
                             style={{
-                              fontSize: "12px",
+                              fontSize:
+                                "12px",
                               padding:
                                 "4px 8px",
-                              background: colors.background,
+                              background:
+                                "#333",
                               borderRadius:
                                 "5px",
                             }}

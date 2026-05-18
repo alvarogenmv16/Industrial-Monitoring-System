@@ -270,7 +270,7 @@ function App() {
           padding: "15px",
           borderRadius: "10px",
           boxShadow:
-            "0 2px 8px rgba(0,0,0,0.08)",
+            "0 2px 8px rgba(177, 5, 5, 0.08)",
         }}
       >
         {/* MOTOR SELECT */}
@@ -566,7 +566,7 @@ function App() {
                   <div
                     style={{
                       fontSize: "24px",
-                      color: "#52c41a",
+                      color: colors.status.running,
                     }}
                   >
                     {
@@ -595,7 +595,7 @@ function App() {
                   <div
                     style={{
                       fontSize: "24px",
-                      color: "#ff4d4f",
+                      color: colors.status.failure,
                     }}
                   >
                     {
@@ -624,7 +624,7 @@ function App() {
                   <div
                     style={{
                       fontSize: "24px",
-                      color: "#faad14",
+                      color: colors.anomaly.warning,
                     }}
                   >
                     {
@@ -653,7 +653,7 @@ function App() {
                   <div
                     style={{
                       fontSize: "24px",
-                      color: "#8c8c8c",
+                      color: colors.textSecondary,
                     }}
                   >
                     {
@@ -737,11 +737,10 @@ function App() {
                 <div
                   key={idx}
                   style={{
-                    background: "#262626",
+                    background: colors.cards.background,
                     padding: "12px",
                     borderRadius: "8px",
-                    borderLeft:
-                      "4px solid #ff4d4f",
+                    borderLeft: `4px solid ${colors.anomaly.critical}`,
                   }}
                 >
                   <div
@@ -783,7 +782,7 @@ function App() {
                     style={{
                       marginTop: "4px",
                       fontSize: "13px",
-                      color: "#faad14",
+                      color: colors.anomaly.warning,
                     }}
                   >
                     Failure Type:{" "}
@@ -884,8 +883,7 @@ function App() {
                       key={id}
                       style={{
                         padding: "6px 10px",
-                        background:
-                          "#ff4d4f",
+                        background: colors.status.failure,
                         borderRadius: "6px",
                         color: "white",
                         fontSize: "12px",
@@ -908,8 +906,7 @@ function App() {
                     key={m.machine_id}
                     style={{
                       padding: "10px",
-                      borderBottom:
-                        "1px solid #2a2a2a",
+                      borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
                     <div
@@ -952,7 +949,7 @@ function App() {
                               padding:
                                 "4px 8px",
                               background:
-                                "#333",
+                                colors.panelLight,
                               borderRadius:
                                 "5px",
                             }}

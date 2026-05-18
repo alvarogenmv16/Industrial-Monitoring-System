@@ -169,7 +169,7 @@ function App() {
       </div>
 
       {/* TIME RANGE SLIDER */}
-        <div style={{ minWidth: "350px", flex: 1 }}>
+        <div style={{ minWidth: "350px", maxWidth: "600px", flex: 1 }}>
           <label style={{ color: colors.text }}>
             <b>Time Window</b>
           </label>
@@ -179,11 +179,22 @@ function App() {
               marginTop: "5px",
               fontSize: "14px",
               color: colors.textSecondary,
+              textAlign: "center",
             }}
           >
-            {history[range[0]]?.timestamp || "-"}
-            {" → "}
-            {history[range[1]]?.timestamp || "-"}
+            {history[range[0]]
+              ? new Date(
+                  history[range[0]].timestamp
+                ).toLocaleDateString()
+              : "-"}
+
+            {"  →  "}
+
+             {history[range[1]]
+              ? new Date(
+                  history[range[1]].timestamp
+                ).toLocaleDateString()
+              : "-"}
           </p>
 
           <Slider

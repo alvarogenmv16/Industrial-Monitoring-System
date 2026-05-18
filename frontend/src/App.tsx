@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import Slider from "rc-slider";
+import "rc-slider/assets/index.css";
 import {
   getMotors,
   getLatestMotor,
   getMotorHistory,
 } from "./services/motors";
 import TelemetryChart from "./components/TelemetryChart";
+import { colors } from "./theme/colors";
 
 function App() {
   const [motors, setMotors] = useState<number[]>([]);
@@ -14,8 +17,10 @@ function App() {
   const [history, setHistory] = useState<any[]>([]);
 
   const [metric, setMetric] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  
+  const [range, setRange] = useState<number[]>([0, 100]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Load motors on mount
   useEffect(() => {
@@ -52,31 +57,76 @@ function App() {
     loadMotorData();
   }, [selectedMotor]);
 
-  const filteredHistory = history.filter((item) => {
-    if (!startDate && !endDate) return true;
+  useEffect(() => {
+  if (!history.length) return;
 
-    const time = new Date(item.timestamp).getTime();
+  let start = 0;
+  let end = history.length - 1;
 
-    if (startDate) {
-      const start = new Date(startDate).getTime();
-      if (time < start) return false;
+  if (startDate) {
+    const startIndex = findClosestIndex(startDate);
+
+    if (startIndex !== -1) {
+      start = startIndex;
     }
+  }
 
-    if (endDate) {
-      const end = new Date(endDate).getTime();
-      if (time > end) return false;
+  if (endDate) {
+    const endIndex = findClosestIndex(endDate);
+
+    if (endIndex !== -1) {
+      end = endIndex;
     }
+  }
 
-    return true;
-  });
+  setRange([start, end]);
+}, [startDate, endDate]);
+
+  // NEW: filter using slider indices
+  const filteredHistory = history.slice(range[0], range[1] + 1);
+
+  function findClosestIndex(date: string) {
+  return history.findIndex((item) =>
+    item.timestamp.startsWith(date)
+  );
+}
 
   return (
-    <div style={{ display: "flex", gap: "40px", padding: "20px" }}>
-      {/* LEFT SIDE */}
-      <div style={{ flex: 2 }}>
-        <h1>Industrial Monitoring</h1>
+  <div
+    style={{
+      padding: "20px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "20px",
+      background: colors.background,
+      minHeight: "100vh",
+    }}
+  >
+    {/* HEADER */}
+    <div>
+      <h1 style={{ color: colors.text }}>
+        Industrial Monitoring Dashboard</h1>
+    </div>
 
-        <h2>Select Motor</h2>
+    {/* FILTER BAR */}
+    <div
+      style={{
+        display: "flex",
+        gap: "20px",
+        alignItems: "center",
+        flexWrap: "wrap",
+        background: colors.panel,
+        padding: "15px",
+        borderRadius: "10px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+      }}
+    >
+      {/* MOTOR SELECT */}
+      <div>
+        <label style={{ color: colors.text }}>
+          <b>Motor</b>
+        </label>
+        <br />
 
         <select
           value={selectedMotor ?? ""}
@@ -92,9 +142,14 @@ function App() {
             </option>
           ))}
         </select>
+      </div>
 
-        {/* NEW: metric selector */}
-        <h2>Select Metric</h2>
+      {/* METRIC SELECT */}
+      <div>
+        <label style={{ color: colors.text }}>
+          <b>Metric</b>
+        </label>
+        <br />
 
         <select
           value={metric ?? ""}
@@ -103,53 +158,145 @@ function App() {
           <option value="" disabled>
             -- Select a metric --
           </option>
+
           <option value="temperature">Temperature</option>
           <option value="vibration">Vibration</option>
           <option value="pressure">Pressure</option>
-          <option value="energy_consumption">Energy Consumption</option>
+          <option value="energy_consumption">
+            Energy Consumption
+          </option>
         </select>
-        
-        <h3>Filter by date</h3>
+      </div>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+      {/* TIME RANGE SLIDER */}
+        <div style={{ minWidth: "350px", flex: 1 }}>
+          <label style={{ color: colors.text }}>
+            <b>Time Window</b>
+          </label>
+
+          <p
+            style={{
+              marginTop: "5px",
+              fontSize: "14px",
+              color: colors.textSecondary,
+            }}
+          >
+            {history[range[0]]?.timestamp || "-"}
+            {" → "}
+            {history[range[1]]?.timestamp || "-"}
+          </p>
+
+          <Slider
+            range
+            min={0}
+            max={Math.max(history.length - 1, 0)}
+            value={range}
+            onChange={(value) =>
+              setRange(value as number[])
+            }
           />
 
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+              marginTop: "15px",
+            }}
+          >
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              style={{
+                padding: "6px",
+                background: colors.background,
+                color: "white",
+                border: colors.border,
+                borderRadius: "5px",
+              }}
+            />
+
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={{
+                padding: "6px",
+                background: colors.background,
+                color: "white",
+                border: colors.border,
+                borderRadius: "5px",
+              }}
+            />
+          </div>
         </div>
+      </div>
 
-        <h3>History</h3>
+    {/* MAIN CONTENT */}
+    <div
+      style={{
+        display: "flex",
+        gap: "20px",
+        alignItems: "flex-start",
+      }}
+    >
+      {/* LEFT SIDE - CHART */}
+      <div
+        style={{
+          flex: 2,
+          background: colors.panel,
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2>Telemetry History</h2>
 
-        {metric && (
-          <TelemetryChart data={filteredHistory} metric={metric} />
+        {metric ? (
+          <TelemetryChart
+            data={filteredHistory}
+            metric={metric}
+          />
+        ) : (
+          <p>Select a metric to display the chart.</p>
         )}
       </div>
 
-      {/* RIGHT SIDE */}
-      <div style={{ flex: 1 }}>
+      {/* RIGHT SIDE - LATEST DATA */}
+      <div
+        style={{
+          flex: 1,
+          background: colors.panel,
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
         <h2>Latest Data</h2>
 
         {latest ? (
-          <div style={{ background: "#f5f5f5", padding: "10px" }}>
+          <div>
             <p><b>Temperature:</b> {latest.temperature}</p>
+
             <p><b>Vibration:</b> {latest.vibration}</p>
+
             <p><b>Pressure:</b> {latest.pressure}</p>
+
             <p><b>Energy:</b> {latest.energy_consumption}</p>
+
             <p><b>Status:</b> {latest.machine_status}</p>
+
             <p><b>Time:</b> {latest.timestamp}</p>
           </div>
         ) : (
-          <p>No motor selected</p>
+          <p style={{ color: colors.text }}>
+            No motor selected
+          </p>
         )}
       </div>
     </div>
+  </div>
   );
 }
 

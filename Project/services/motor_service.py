@@ -58,7 +58,6 @@ def get_motor_history(
     machine_id: int, 
     start_time: Optional[str], 
     end_time: Optional[str], 
-    limit: int = 1000
 ):
     cursor = db.cursor()
     query = "SELECT * FROM motor_data WHERE machine_id = ?"
@@ -70,51 +69,75 @@ def get_motor_history(
     if end_time:
         query += " AND timestamp <= ?"
         params.append(end_time)
-    query += " ORDER BY timestamp ASC LIMIT ?"
-    params.append(limit)
+    query += " ORDER BY timestamp ASC"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
     return [dict(row) for row in rows]
 
 def get_motor_status_overview(
-    db: Connection
+    db: Connection,
+    start_time: str | None = None,
+    end_time: str | None = None
 ):
     cursor = db.cursor()
-    query = """
+
+    filters = []
+    params = []
+
+    if start_time:
+        filters.append("timestamp >= ?")
+        params.append(start_time)
+
+    if end_time:
+        filters.append("timestamp <= ?")
+        params.append(end_time)
+
+    where_clause = ""
+
+    if filters:
+        where_clause = "WHERE " + " AND ".join(filters)
+
+    query = f"""
         SELECT 
             md.machine_id,
             md.machine_status,
             md.anomaly_flag
         FROM motor_data md
-        INNER JOIN(
-            SELECT machine_id,
-            MAX(timestamp) AS latest_timestamp
+
+        INNER JOIN (
+            SELECT 
+                machine_id,
+                MAX(timestamp) AS latest_timestamp
             FROM motor_data
+            {where_clause}
             GROUP BY machine_id
-        ) AS latest ON 
-        md.machine_id = latest.machine_id 
+        ) AS latest
+
+        ON md.machine_id = latest.machine_id
         AND md.timestamp = latest.latest_timestamp
     """
-    cursor.execute(query)
+
+    cursor.execute(query, params)
+
     rows = cursor.fetchall()
 
-    motor = []
+    motors = []
 
     summary = {
-        "idle":0,
-        "running":0,
-        "failure":0,
-        "idle_with_anomaly":0,
-        "running_with_anomaly":0,
-        "failure_with_anomaly":0
+        "idle": 0,
+        "running": 0,
+        "failure": 0,
+        "idle_with_anomaly": 0,
+        "running_with_anomaly": 0,
+        "failure_with_anomaly": 0
     }
 
     for row in rows:
         status = MachineStatus(row["machine_status"])
         anomaly = bool(row["anomaly_flag"])
 
-        motor.append(
+        motors.append(
             MotorStatus(
                 machine_id=row["machine_id"],
                 status=status,
@@ -122,23 +145,28 @@ def get_motor_status_overview(
             )
         )
 
-        # Count status
+        # Status counters
         if status == MachineStatus.idle:
             summary["idle"] += 1
+
             if anomaly:
                 summary["idle_with_anomaly"] += 1
+
         elif status == MachineStatus.running:
             summary["running"] += 1
+
             if anomaly:
                 summary["running_with_anomaly"] += 1
+
         elif status == MachineStatus.failure:
             summary["failure"] += 1
+
             if anomaly:
                 summary["failure_with_anomaly"] += 1
 
     return MotorOverviewResponse(
         summary=MotorSummary(**summary),
-        motors=motor
+        motors=motors
     )
 
 def get_anomaly(
@@ -154,6 +182,7 @@ def get_anomaly(
             failure_type
         FROM motor_data
         WHERE anomaly_flag = 1
+            AND failure_type != 'Normal'
         ORDER BY timestamp DESC
     """
     cursor.execute(query)
@@ -186,6 +215,7 @@ def get_anomaly_overview(
         SELECT timestamp, machine_id, failure_type
         FROM motor_data
         WHERE anomaly_flag = 1
+            AND failure_type != 'Normal'
     """
 
     params: List[object] = []

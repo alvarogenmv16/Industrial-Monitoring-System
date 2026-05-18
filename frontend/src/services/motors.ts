@@ -26,8 +26,17 @@ export async function getMotorHistory(motorId: number) {
 // STATUS OVERVIEW
 // ===============
 
-export async function getMotorsStatusOverview() {
-  const res = await api.get("/motors/status/overview");
+export async function getMotorsStatusOverview(
+  start_time?: string,
+  end_time?: string
+) {
+  const res = await api.get("/motors/status/overview", {
+    params: {
+      start_time,
+      end_time,
+    },
+  });
+
   return res.data;
 }
 

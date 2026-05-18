@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 class MotorIDResponse(BaseModel):
     motor_ids: List[int]
@@ -46,8 +46,8 @@ class AnomalyEvent(BaseModel):
     failure_type: str
 
 class TimeWindow(BaseModel):
-    start: str
-    end: str
+    start: Optional[str] = None
+    end: Optional[str] = None
 
 class MotorAnomalyBreakdown(BaseModel):
     machine_id: int 

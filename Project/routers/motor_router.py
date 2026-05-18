@@ -68,14 +68,16 @@ async def get_motor_ids(
 )
 async def get_motor_status(
     motor_id: int, 
+    start_time: str | None = None,
+    end_time: str | None = None,
     db: Connection = Depends(get_db)
 ):
-    data = motor_service.get_motor_data(db, motor_id)
+    data = motor_service.get_motor_data(db, motor_id, start_time, end_time)
 
     if not data:
         raise HTTPException(
             status_code=404, 
-            detail=f"No data found for motor with ID: {motor_id}"
+            detail=f"No data found for motor with ID: {motor_id} in selected time range."
         )
 
     return dict(data)   # Convert sqlite3.Row to a regular dictionary for Pydantic model parsing
@@ -111,7 +113,7 @@ async def get_motor_history(
     if not data:
         raise HTTPException(
             status_code=404,
-            detail=f"No historical data found for motor with ID: {motor_id}"
+            detail=f"No historical data found for motor with ID: {motor_id} in selected time range."
         )
 
     return data

@@ -58,7 +58,6 @@ def get_motor_history(
     machine_id: int, 
     start_time: Optional[str], 
     end_time: Optional[str], 
-    limit: int = 1000
 ):
     cursor = db.cursor()
     query = "SELECT * FROM motor_data WHERE machine_id = ?"
@@ -70,8 +69,7 @@ def get_motor_history(
     if end_time:
         query += " AND timestamp <= ?"
         params.append(end_time)
-    query += " ORDER BY timestamp ASC LIMIT ?"
-    params.append(limit)
+    query += " ORDER BY timestamp ASC"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()

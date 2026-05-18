@@ -117,35 +117,42 @@ async def get_motor_history(
     return data
 
 # Motor status overview
-@router.get("/status/overview", 
+from typing import Optional
+
+@router.get(
+    "/status/overview",
     response_model=MotorOverviewResponse,
-    responses = motor_responses.motors_status_overview_response,
-    summary = "Get an overview of the current status of all motors",
-    description = """
-    Retrieve an overview of the current status of all motors in the system.
+    responses=motor_responses.motors_status_overview_response,
+    summary="Get an overview of motor status in a time window",
+    description="""
+    Retrieve an overview of the motor status within an optional time window.
 
     ### Includes
-    - Total number of motors
-    - Count of motors in each status category (idle, running, failure)
-    - Count of motors with anomalies in each status category
+    - Count of motors by status (idle, running, failure)
+    - Count of anomalies per status
+    - Latest state per motor inside selected time range
 
     ### Behavior
-    - Returns a summary of the latest status for each motor.
-    - Returns **404** if no motors are found.
-
-    ### Example
-    Used to populate a dashboard overview page showing overall system health.
+    - If no time window is provided → returns latest global snapshot
+    - If time window is provided → filters data within range
+    - Returns 404 if no motors are found
     """,
 )
 async def get_motor_status_overview(
-    db: Connection = Depends(get_db)
+    db: Connection = Depends(get_db),
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
 ):
-    data = motor_service.get_motor_status_overview(db)
+    data = motor_service.get_motor_status_overview(
+        db,
+        start_time=start_time,
+        end_time=end_time
+    )
 
     if not data:
         raise HTTPException(
             status_code=404,
-            detail=f"Failed to retrieve motor status overview from the database."
+            detail="Failed to retrieve motor status overview from the database."
         )
 
     return data

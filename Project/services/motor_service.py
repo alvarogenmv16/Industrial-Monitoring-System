@@ -182,6 +182,7 @@ def get_anomaly(
             failure_type
         FROM motor_data
         WHERE anomaly_flag = 1
+            AND failure_type != 'Normal'
         ORDER BY timestamp DESC
     """
     cursor.execute(query)
@@ -214,6 +215,7 @@ def get_anomaly_overview(
         SELECT timestamp, machine_id, failure_type
         FROM motor_data
         WHERE anomaly_flag = 1
+            AND failure_type != 'Normal'
     """
 
     params: List[object] = []
